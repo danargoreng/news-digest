@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ringkasan Berita Harian</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <h1>Ringkasan Berita Harian</h1>
+  <p class="sub">Ringkasan netral dari berbagai media. Urut dari yang paling banyak diberitakan.</p>
+</header>
+
+<main>
+  <form method="get" class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Cari kata kunci...">
+    <select name="kategori">
+      <option value="">Semua kategori</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {{ 'selected' if c == sel_category }}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <select name="skala">
+      <option value="">Nasional &amp; internasional</option>
+      {% for s in scales %}
+        <option value="{{ s }}" {{ 'selected' if s == sel_scale }}>{{ s|capitalize }}</option>
+      {% endfor %}
+    </select>
+    <select name="tanggal">
+      {% for d in dates %}
+        <option value="{{ d }}" {{ 'selected' if d == date }}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Terapkan</button>
+    <a class="reset" href="{{ url_for('index') }}">Reset</a>
+  </form>
+
+  {% if not dates %}
+    <p class="empty">Belum ada data. Jalankan <code>python run_pipeline.py</code> terlebih dahulu.</p>
+  {% elif not clusters %}
+    <p class="empty">Tidak ada berita yang cocok dengan filter.</p>
+  {% else %}
+    <p class="count">{{ clusters|length }} peristiwa &middot; {{ date }}</p>
+    {% for c in clusters %}
+    <article class="card">
+      <div class="meta">
+        <span class="badge">{{ c.category }}</span>
+        {% for s in c.scales.split(',') %}<span class="badge scale">{{ s }}</span>{% endfor %}
+        <span class="media">{{ c.source_count }} media</span>
+      </div>
+      <h2>{{ c.title }}</h2>
+      <p class="summary">{{ c.summary }}</p>
+      {% if c.tags %}
+      <p class="tags">{% for t in c.tags %}<span>#{{ t }}</span>{% endfor %}</p>
+      {% endif %}
+      <details>
+        <summary>Sumber ({{ c.articles|length }})</summary>
+        <ul class="sources">
+          {% for a in c.articles %}
+          <li><strong>{{ a.source }}</strong>:
+            <a href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+    </article>
+    {% endfor %}
+  {% endif %}
+</main>
+</body>
+</html>

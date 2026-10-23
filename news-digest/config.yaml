@@ -1,0 +1,83 @@
+# ============================================================
+# KONFIGURASI UTAMA - edit file ini untuk mengubah perilaku aplikasi
+# ============================================================
+
+# --- LLM (OpenAI-compatible API) ---
+# Ganti base_url & model untuk memakai penyedia lain, contoh:
+#   Groq       : https://api.groq.com/openai/v1   (model: llama-3.3-70b-versatile)
+#   OpenRouter : https://openrouter.ai/api/v1
+#   Ollama lokal: http://localhost:11434/v1       (api key isi apa saja)
+llm:
+  base_url: "https://api.openai.com/v1"
+  model: "gpt-4o-mini"
+  embedding_model: "text-embedding-3-small"
+  api_key_env: "OPENAI_API_KEY"   # nama variabel di file .env
+  classify_batch_size: 25         # jumlah artikel per panggilan klasifikasi
+  summary_batch_size: 8           # jumlah cluster per panggilan ringkasan
+
+# --- Clustering ---
+clustering:
+  # "embedding": embedding + cosine similarity (lebih akurat, butuh API embedding)
+  # "judul"    : kemiripan kata pada judul (gratis, kurang akurat; dipakai juga
+  #              otomatis kalau embedding gagal)
+  method: "embedding"
+  similarity_threshold: 0.72      # embedding: naikkan jika terlalu banyak berita
+                                  # berbeda yang tergabung, turunkan jika terlalu
+                                  # banyak berita sama yang terpisah
+  title_threshold: 0.45           # ambang untuk metode "judul"
+
+# --- Pipeline ---
+pipeline:
+  hours_back: 24
+  max_articles_per_source: 60     # batas per sumber, menghemat token
+  max_clusters_summarized: 120    # cluster teratas yang diringkas LLM
+  request_timeout: 15             # detik, per feed RSS
+  schedule_hour: 7                # jadwal harian
+  schedule_minute: 0
+  timezone: "Asia/Jakarta"
+
+database: "data/news.db"
+
+# ============================================================
+# SUMBER BERITA
+# Tambah/hapus sumber cukup dengan menambah/menghapus blok di bawah.
+# scale: "nasional" atau "internasional"
+# CATATAN: URL RSS media bisa berubah sewaktu-waktu. Jika ada sumber yang
+# gagal, aplikasi tetap jalan; cek log lalu perbarui URL-nya di sini.
+# ============================================================
+sources:
+  # ---------- Nasional ----------
+  - name: Kompas
+    scale: nasional
+    url: "https://www.kompas.com/getrss/news"
+  - name: Detik
+    scale: nasional
+    url: "https://rss.detik.com/index.php/detikcom"
+  - name: CNBC Indonesia
+    scale: nasional
+    url: "https://www.cnbcindonesia.com/news/rss"
+  - name: Kontan
+    scale: nasional
+    url: "https://www.kontan.co.id/rss"
+  - name: Tempo
+    scale: nasional
+    url: "https://rss.tempo.co/nasional"
+  - name: Antara
+    scale: nasional
+    url: "https://www.antaranews.com/rss/terkini.xml"
+
+  # ---------- Internasional ----------
+  # Reuters tidak lagi menyediakan RSS resmi; ini memakai Google News RSS
+  # yang difilter ke reuters.com (hanya judul + link).
+  - name: Reuters
+    scale: internasional
+    url: "https://news.google.com/rss/search?q=site:reuters.com+when:1d&hl=en-US&gl=US&ceid=US:en"
+  - name: BBC
+    scale: internasional
+    url: "http://feeds.bbci.co.uk/news/world/rss.xml"
+  - name: Al Jazeera
+    scale: internasional
+    url: "https://www.aljazeera.com/xml/rss/all.xml"
+  - name: The Guardian
+    scale: internasional
+    url: "https://www.theguardian.com/world/rss"
